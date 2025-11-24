@@ -2,32 +2,41 @@ using UnityEngine;
 
 public class Loot : MonoBehaviour
 {
-    public ItemSO itemSO;  // Reference to the item data
+    public ItemSO itemSO;  // Assigned at runtime
+
+    private GameObject spawnedModel;
 
     private void Start()
     {
-        // Instantiate the 3D model from the ItemSO
+        if (itemSO != null)
+        {
+            SpawnModel();
+            this.name = itemSO.itemName;
+        }
+    }
+
+    public void SpawnModel()
+    {
         if (itemSO != null && itemSO.prefab3D != null)
         {
-            GameObject model = Instantiate(itemSO.prefab3D, transform);
-            model.transform.localPosition = Vector3.zero;    // Center the model
-            model.transform.localRotation = Quaternion.identity;
-        }
+            // Destroy previous model if it exists
+            if (spawnedModel != null)
+                Destroy(spawnedModel);
 
-        // Optionally rename the object to match the item
-        if (itemSO != null)
-            this.name = itemSO.itemName;
+            spawnedModel = Instantiate(itemSO.prefab3D, transform);
+            spawnedModel.transform.localPosition = Vector3.zero;
+            spawnedModel.transform.localRotation = Quaternion.identity;
+
+            // Optional: make sure it’s scaled to something visible
+            spawnedModel.transform.localScale = Vector3.one * 1.5f;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Check if the player touches the loot
         if (other.CompareTag("Player"))
         {
-            // TODO: Add the item to inventory here
-            // Inventory.Add(itemSO);
-
-            // Destroy the loot object immediately
+            // TODO: Add item to inventory
             Destroy(gameObject);
         }
     }
