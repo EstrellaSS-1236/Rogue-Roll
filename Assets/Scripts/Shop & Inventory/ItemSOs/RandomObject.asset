@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b3bae51b7edf964aa6c3a3bac405190, type: 3}
-  m_Name: D6
+  m_Name: RandomObject
   m_EditorClassIdentifier: Assembly-CSharp::ItemSO
-  itemName: d6
+  itemName: aaaaaaaaaaaa
   icon: {fileID: 21300000, guid: e5fd13576b849fd4fa809ea7dad1ea2b, type: 3}
   quantity: 1
   price: 0
-  prefab3D: {fileID: 919132149155446097, guid: 756ea23d8ba5e9a4399645f3a25f65aa, type: 3}
+  prefab3D: {fileID: 919132149155446097, guid: 5865bb7bea7c8e64386c3b51d64dcf95, type: 3}

@@ -34,10 +34,7 @@ public class Loot : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            // TODO: Add item to inventory
-            Destroy(gameObject);
-        }
+        if (!other.CompareTag("Player")) return;
+
     }
 }
