@@ -16,4 +16,8 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: e5fd13576b849fd4fa809ea7dad1ea2b, type: 3}
   quantity: 1
   price: 0
-  prefab3D: {fileID: 919132149155446097, guid: 756ea23d8ba5e9a4399645f3a25f65aa, type: 3}
+  soldBy: 50
+  itemDescription: 
+  prefab3D: {fileID: 4847551577284863935, guid: fd449e3f525a6974689044ed95919c54, type: 3}
+  statToChange: 1
+  amountToChangeStat: 50

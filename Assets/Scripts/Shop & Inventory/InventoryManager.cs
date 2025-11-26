@@ -1,51 +1,88 @@
 using UnityEngine;
+using System.Collections;
 
 public class InventoryManager : MonoBehaviour
 {
+    [Header("Inventory UI")]
     public GameObject InventoryMenu;
     public ItemSlot[] itemSlot;
 
+    [Header("Item Data")]
+    public ItemSO[] itemSOs;
+
     private bool menuActivated;
 
-    private void Start()
+    private void OnEnable()
     {
-        InventoryMenu.SetActive(false);
+        StartCoroutine(RefreshSlotsNextFrame());
     }
+
+    private IEnumerator RefreshSlotsNextFrame()
+    {
+        yield return null; // Wait one frame so UI is fully active
+
+        if (InventoryMenu != null && InventoryMenu.activeSelf)
+        {
+            foreach (var slot in itemSlot)
+            {
+                if (slot != null)
+                    slot.ForceUpdateUI();
+            }
+        }
+    }
+
     public void ToggleInventory()
     {
         menuActivated = !menuActivated;
+        Debug.Log("ToggleInventory called, menuActivated = " + menuActivated);
 
         if (InventoryMenu != null)
+        {
             InventoryMenu.SetActive(menuActivated);
 
-        Time.timeScale = menuActivated ? 0 : 1;
+            if (menuActivated)
+                StartCoroutine(RefreshSlotsNextFrame());
+        }
+
+        Time.timeScale = menuActivated ? 0f : 1f;
+    }
+
+    public void UseItem(string itemName)
+    {
+        foreach (var item in itemSOs)
+        {
+            if (item.itemName == itemName)
+            {
+                item.UseItem();
+                return;
+            }
+        }
     }
 
     public int AddItem(string itemName, int quantity, Sprite itemSprite, string itemDescription)
     {
-        for (int i = 0; i < itemSlot.Length; i++)
+        foreach (var slot in itemSlot)
         {
-            if (itemSlot[i].isFull == false && itemSlot[i].itemName == itemName || itemSlot[i].quantity == 0)
+            if ((!slot.isFull && slot.itemName == itemName) || slot.quantity == 0)
             {
-                int leftOverItems = itemSlot[i].AddItem(itemName, quantity, itemSprite, itemDescription);
-                if (leftOverItems > 0)
-                    leftOverItems = AddItem(itemName, leftOverItems, itemSprite, itemDescription);
+                int leftOverItems = slot.AddItem(itemName, quantity, itemSprite, itemDescription);
 
-                return leftOverItems;
-                  
+                if (leftOverItems > 0)
+                    return AddItem(itemName, leftOverItems, itemSprite, itemDescription);
+
+                return 0;
             }
         }
+
         return quantity;
     }
 
     public void DeselectAllSlots()
     {
-        for (int i = 0; i < itemSlot.Length; i++)
+        foreach (var slot in itemSlot)
         {
-            if (itemSlot[i].selectedShader != null)
-                itemSlot[i].selectedShader.SetActive(false);
-
-            itemSlot[i].thisItemSelected = false;
+            if (slot.selectedShader != null) slot.selectedShader.SetActive(false);
+            slot.thisItemSelected = false;
         }
     }
 }

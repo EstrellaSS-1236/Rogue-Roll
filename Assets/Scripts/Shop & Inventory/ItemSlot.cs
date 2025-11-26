@@ -5,24 +5,26 @@ using UnityEngine.EventSystems;
 
 public class ItemSlot : MonoBehaviour, IPointerClickHandler
 {
-    //======ITEM DATA======//
+    //====== ITEM DATA ======//
     public string itemName;
     public int quantity;
     public Sprite itemSprite;
     public bool isFull;
     public string itemDescription;
     public Sprite emptySprite;
-    [SerializeField] private int maxNumberOfItems;
 
-    //======ITEM SLOT======//
+    [SerializeField] private int maxNumberOfItems = 10;
+
+    //====== UI REFERENCES ======//
     [SerializeField] private TMP_Text quantityText;
     [SerializeField] private Image itemImage;
 
-    //======ITEM DESCRIPTION SLOT======//
+    //====== ITEM DESCRIPTION UI ======//
     public Image itemDescriptionImage;
     public TMP_Text itemDescriptionNameText;
     public TMP_Text itemDescriptionText;
 
+    //====== SELECTION ======//
     public GameObject selectedShader;
     public bool thisItemSelected;
 
@@ -38,18 +40,12 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
             quantityText.enabled = false;
         }
 
-        if (selectedShader != null)
-            selectedShader.SetActive(false);
+        if (selectedShader != null) selectedShader.SetActive(false);
     }
 
     public int AddItem(string itemName, int quantity, Sprite itemSprite, string itemDescription)
     {
-        // Check to see if the slot is already full
-        if (isFull)
-        {
-            Debug.Log($"Slot already full, returning {quantity} items");
-            return quantity;
-        }
+        if (isFull) return quantity;
 
         this.itemName = itemName;
         this.itemSprite = itemSprite;
@@ -57,7 +53,6 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         this.itemDescription = itemDescription;
 
         this.quantity += quantity;
-        Debug.Log($"Slot {gameObject.name} now has quantity = {this.quantity}");
 
         if (this.quantity >= maxNumberOfItems)
         {
@@ -65,49 +60,63 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
             this.quantity = maxNumberOfItems;
             isFull = true;
 
-            quantityText.text = this.quantity.ToString();
-            quantityText.enabled = true;
-
-            Debug.Log($"Slot reached max. Text set to {quantityText.text}, leftover = {extraItems}");
+            UpdateUI();
             return extraItems;
         }
 
-        quantityText.text = this.quantity.ToString();
-        quantityText.enabled = true;
-
-        Debug.Log($"Text updated to {quantityText.text}, enabled = {quantityText.enabled}");
+        UpdateUI();
         return 0;
     }
 
+    private void UpdateUI()
+    {
+        if (quantityText != null)
+        {
+            quantityText.text = this.quantity.ToString();
+            quantityText.enabled = this.quantity > 0;
+        }
+    }
+
+    // Force TMP to refresh when menu is enabled
+    public void ForceUpdateUI()
+    {
+        if (quantityText != null)
+        {
+            quantityText.ForceMeshUpdate();
+            quantityText.text = this.quantity.ToString();
+            quantityText.enabled = this.quantity > 0;
+        }
+    }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        switch (eventData.button)
-        {
-            case PointerEventData.InputButton.Left:
-                OnLeftClick();
-                break;
-            case PointerEventData.InputButton.Right:
-                OnRightClick();
-                break;
-        }
+        if (eventData.button == PointerEventData.InputButton.Left)
+            OnLeftClick();
+        else if (eventData.button == PointerEventData.InputButton.Right)
+            OnRightClick();
     }
 
     private void OnLeftClick()
     {
+        if (thisItemSelected)
+            inventoryManager?.UseItem(itemName);
+
         inventoryManager?.DeselectAllSlots();
-        selectedShader.SetActive(true);
+        selectedShader?.SetActive(true);
         thisItemSelected = true;
-        itemDescriptionNameText.text = itemName;
-        itemDescriptionText.text = itemDescription;
-        itemDescriptionImage.sprite = itemSprite;
-        if (itemDescriptionImage.sprite == null)
-        {
-            itemDescriptionImage.sprite = emptySprite;
-        }
+
+        if (itemDescriptionNameText != null)
+            itemDescriptionNameText.text = itemName;
+
+        if (itemDescriptionText != null)
+            itemDescriptionText.text = itemDescription;
+
+        if (itemDescriptionImage != null)
+            itemDescriptionImage.sprite = itemSprite ?? emptySprite;
     }
 
     private void OnRightClick()
     {
+        Debug.Log($"Right-clicked on {itemName}. Future: drop/split functionality.");
     }
 }
