@@ -2,7 +2,6 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using System;
 
 public class ItemSlot : MonoBehaviour, IPointerClickHandler
 {
@@ -34,7 +33,7 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
     private void Awake()
     {
         // Cache InventoryManager safely
-        inventoryManager = GameObject.Find("InventoryCanvas")?.GetComponent<InventoryManager>();
+        inventoryManager = Object.FindFirstObjectByType<InventoryManager>();
 
         // Initialize quantity text
         if (quantityText != null)
@@ -80,8 +79,16 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         // Update quantity text visibility and value
         if (quantityText != null)
         {
-            quantityText.text = quantity.ToString();
-            quantityText.enabled = quantity > 0;
+            if (quantity > 0)
+            {
+                quantityText.text = quantity.ToString();
+                quantityText.enabled = true;
+            }
+            else
+            {
+                quantityText.text = string.Empty;
+                quantityText.enabled = false;
+            }
         }
     }
 
@@ -109,13 +116,16 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         if (thisItemSelected)
         {
             // Use item if already selected
-            inventoryManager?.UseItem(itemName);
-            quantity--;
+            if (!string.IsNullOrEmpty(itemName))
+            {
+                inventoryManager?.UseItem(itemName);
+                quantity--;
 
-            UpdateUI();
+                UpdateUI();
 
-            if (quantity <= 0)
-                EmptySlot();
+                if (quantity <= 0)
+                    EmptySlot();
+            }
         }
         else
         {
@@ -157,7 +167,6 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         // Hide selection shader
         if (selectedShader != null) selectedShader.SetActive(false);
     }
-
 
     private void OnRightClick()
     {

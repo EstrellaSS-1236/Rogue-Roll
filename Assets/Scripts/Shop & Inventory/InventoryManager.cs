@@ -1,25 +1,39 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class InventoryManager : MonoBehaviour
 {
     [Header("Inventory UI")]
-    public GameObject InventoryMenu;
-    public ItemSlot[] itemSlot;
+    public GameObject InventoryMenu;          // Reference to the inventory menu UI
+    public ItemSlot[] itemSlot;               // Array of item slots in the UI
 
     [Header("Item Data")]
-    public ItemSO[] itemSOs;
+    public ItemSO[] itemSOs;                  // All available item definitions
 
-    private bool menuActivated;
+    private bool menuActivated;               // Tracks whether inventory menu is open
+    private Dictionary<string, ItemSO> itemLookup; // Faster lookup for items by name
+
+    private void Awake()
+    {
+        // Build dictionary for quick item lookups
+        itemLookup = new Dictionary<string, ItemSO>();
+        foreach (var item in itemSOs)
+        {
+            if (!itemLookup.ContainsKey(item.itemName))
+                itemLookup[item.itemName] = item;
+        }
+    }
 
     private void OnEnable()
     {
+        // Refresh slots after UI is fully active
         StartCoroutine(RefreshSlotsNextFrame());
     }
 
     private IEnumerator RefreshSlotsNextFrame()
     {
-        yield return null; // Wait one frame so UI is fully active
+        yield return null; // Wait one frame so UI is ready
 
         if (InventoryMenu != null && InventoryMenu.activeSelf)
         {
@@ -44,18 +58,20 @@ public class InventoryManager : MonoBehaviour
                 StartCoroutine(RefreshSlotsNextFrame());
         }
 
+        // Pause game when inventory is open
         Time.timeScale = menuActivated ? 0f : 1f;
     }
 
     public void UseItem(string itemName)
     {
-        foreach (var item in itemSOs)
+        // Use dictionary for faster lookup
+        if (itemLookup.TryGetValue(itemName, out var item))
         {
-            if (item.itemName == itemName)
-            {
-                item.UseItem();
-                return;
-            }
+            item.UseItem();
+        }
+        else
+        {
+            Debug.LogWarning($"Item {itemName} not found in inventory.");
         }
     }
 
@@ -63,6 +79,7 @@ public class InventoryManager : MonoBehaviour
     {
         foreach (var slot in itemSlot)
         {
+            // Add to slot if empty or matches same item
             if ((!slot.isFull && slot.itemName == itemName) || slot.quantity == 0)
             {
                 int leftOverItems = slot.AddItem(itemName, quantity, itemSprite, itemDescription);
@@ -70,11 +87,11 @@ public class InventoryManager : MonoBehaviour
                 if (leftOverItems > 0)
                     return AddItem(itemName, leftOverItems, itemSprite, itemDescription);
 
-                return 0;
+                return 0; // All items added successfully
             }
         }
 
-        return quantity;
+        return quantity; // Return leftover if no slots available
     }
 
     public void DeselectAllSlots()

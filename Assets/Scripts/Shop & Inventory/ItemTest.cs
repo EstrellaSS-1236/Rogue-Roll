@@ -1,11 +1,12 @@
 using UnityEngine;
+
 public class ItemTest : MonoBehaviour
 {
-    [SerializeField] private ItemSO itemData;       // Assign your D6 or other ItemSO in Inspector
-    [SerializeField] private int quantity = 1;      // How many of this item to give
-    [SerializeField] private InventoryManager inventoryManager;
+    [SerializeField] private ItemSO itemData;              // Reference to the ScriptableObject that defines this item
+    [SerializeField] private int quantity = 1;             // How many of this item to give
+    [SerializeField] private InventoryManager inventoryManager; // Reference to inventory manager
 
-    private GameObject spawnedModel;
+    private GameObject spawnedModel; // Holds the spawned 3D model
 
     private void Start()
     {
@@ -16,22 +17,23 @@ public class ItemTest : MonoBehaviour
                 itemData.prefab3D,
                 transform.position,
                 transform.rotation,
-                transform // parent to this empty slot
+                transform // parent to this object
             );
         }
 
-        // If not assigned in Inspector, try to find InventoryManager
+        // If not assigned in Inspector, try to find InventoryManager safely
         if (inventoryManager == null)
         {
-            inventoryManager = GameObject.Find("InventoryCanvas").GetComponent<InventoryManager>();
+            inventoryManager = Object.FindFirstObjectByType<InventoryManager>();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") && itemData != null)
+        // Only allow pickup when colliding with the Player
+        if (other.CompareTag("Player") && itemData != null && inventoryManager != null)
         {
-            // Add to inventory
+            // Add item to inventory
             int leftOverItems = inventoryManager.AddItem(
                 itemData.itemName,
                 quantity,
@@ -39,13 +41,15 @@ public class ItemTest : MonoBehaviour
                 itemData.itemDescription
             );
 
+            // If all items were picked up, destroy this object
             if (leftOverItems <= 0)
             {
-                Destroy(gameObject); // fully picked up
+                Destroy(gameObject);
             }
             else
             {
-                quantity = leftOverItems; // still some left
+                // Update quantity if some items couldn’t fit
+                quantity = leftOverItems;
             }
         }
     }
