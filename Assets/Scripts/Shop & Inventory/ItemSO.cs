@@ -1,52 +1,33 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NewItem", menuName = "Loot/ItemSO")]
+[CreateAssetMenu(fileName = "NewItem", menuName = "Inventory/Item")]
 public class ItemSO : ScriptableObject
 {
-    [Header("Item Info")]
-    public string itemName;               // Name of the item
-    public Sprite icon;                   // Icon for inventory or UI
-    public int quantity = 1;              // Default quantity when picked up
-    public int price = 0;                 // Price if sold in a shop
-    public int soldBy = 0;                // Vendor ID or reference
-    [TextArea] public string itemDescription; // Description shown in UI
-
-    [Header("3D Prefab")]
-    public GameObject prefab3D;           // 3D model to spawn in the world
-
-    [Header("Item Effect")]
-    public StatToChange statToChange = StatToChange.none; // Which stat this item affects
-    public int amountToChangeStat;        // How much to change the stat by
-
-    // Enum for different stats the item can affect
-    public enum StatToChange
+    // Enum defined inside ItemSO
+    public enum StatType
     {
-        none,                             // No effect
-        gold                              // Affects gold amount
-        // Future: health, mana, stamina, etc.
+        gold       // Gold / Pesetas
     }
 
-    // Safely apply the item effect
+    public string itemName;              // Name of the item
+    public Sprite icon;                  // Icon for UI
+    [TextArea] public string itemDescription; // Description text
+    public GameObject prefab3D;          // Associated 3D prefab
+    public StatType statToChange;        // Which stat this item affects
+    public int amountToChangeStat;       // How much to change the stat
+
+    // Called when the player uses the item from inventory
     public void UseItem()
     {
-        switch (statToChange)
-        {
-            case StatToChange.gold:
-                // Use singleton access instead of GameObject.Find
-                if (GoldManager.Instance != null)
-                {
-                    GoldManager.Instance.ChangeGold(amountToChangeStat);
-                }
-                else
-                {
-                    Debug.LogWarning($"GoldManager not found when using {itemName}");
-                }
-                break;
+        Debug.Log("[ItemSO] Using " + itemName + " | statToChange=" + statToChange);
 
-            case StatToChange.none:
-            default:
-                Debug.Log($"{itemName} has no effect.");
-                break;
+        if (statToChange == StatType.gold && GoldManager.Instance != null)
+        {
+            GoldManager.Instance.TryUseGoldItem(this);
+        }
+        else
+        {
+            Debug.LogWarning("[ItemSO] statToChange not handled: " + statToChange);
         }
     }
 }

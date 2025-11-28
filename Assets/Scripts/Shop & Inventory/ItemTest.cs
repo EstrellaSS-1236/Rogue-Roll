@@ -2,55 +2,58 @@ using UnityEngine;
 
 public class ItemTest : MonoBehaviour
 {
-    [SerializeField] private ItemSO itemData;              // Reference to the ScriptableObject that defines this item
-    [SerializeField] private int quantity = 1;             // How many of this item to give
-    [SerializeField] private InventoryManager inventoryManager; // Reference to inventory manager
+    [SerializeField] private ItemSO itemData;   // ScriptableObject that defines this item
+    [SerializeField] private int quantity = 1;  // How many of this item to give
 
-    private GameObject spawnedModel; // Holds the spawned 3D model
+    private GameObject spawnedModel;
 
     private void Start()
     {
-        // Spawn the 3D model defined in the ItemSO
-        if (itemData != null && itemData.prefab3D != null)
-        {
-            spawnedModel = Instantiate(
-                itemData.prefab3D,
-                transform.position,
-                transform.rotation,
-                transform // parent to this object
-            );
-        }
+        Debug.Log("ItemTest.Start() called on " + gameObject.name);
 
-        // If not assigned in Inspector, try to find InventoryManager safely
-        if (inventoryManager == null)
-        {
-            inventoryManager = Object.FindFirstObjectByType<InventoryManager>();
-        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Only allow pickup when colliding with the Player
-        if (other.CompareTag("Player") && itemData != null && inventoryManager != null)
-        {
-            // Add item to inventory
-            int leftOverItems = inventoryManager.AddItem(
-                itemData.itemName,
-                quantity,
-                itemData.icon,
-                itemData.itemDescription
-            );
+        Debug.Log("OnTriggerEnter fired on " + gameObject.name + " with collider: " + other.name);
 
-            // If all items were picked up, destroy this object
-            if (leftOverItems <= 0)
+        if (other.CompareTag("Player"))
+        {
+            Debug.Log("Collider belongs to Player.");
+
+            if (itemData != null && InventoryManager.Instance != null)
             {
-                Destroy(gameObject);
+                Debug.Log("Player touched item: " + itemData.itemName +
+                          " | Quantity: " + quantity);
+
+                int leftOverItems = InventoryManager.Instance.AddItem(
+                    itemData.itemName,
+                    quantity,
+                    itemData.icon,
+                    itemData.itemDescription
+                );
+
+                Debug.Log("InventoryManager.AddItem returned leftover = " + leftOverItems);
+
+                if (leftOverItems <= 0)
+                {
+                    Debug.Log("Item fully consumed, destroying " + gameObject.name);
+                    Destroy(gameObject);
+                }
+                else
+                {
+                    Debug.Log("Item partially consumed, updating quantity to " + leftOverItems);
+                    quantity = leftOverItems;
+                }
             }
             else
             {
-                // Update quantity if some items couldn’t fit
-                quantity = leftOverItems;
+                Debug.LogWarning("ItemData or InventoryManager.Instance is null on " + gameObject.name);
             }
+        }
+        else
+        {
+            Debug.Log("OnTriggerEnter ignored: collider is not Player (tag=" + other.tag + ")");
         }
     }
 }

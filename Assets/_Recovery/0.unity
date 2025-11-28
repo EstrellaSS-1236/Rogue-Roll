@@ -647,7 +647,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1600, y: 1100}
+  m_SizeDelta: {x: 1620, y: 1282}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &249362487
 MonoBehaviour:
@@ -1601,7 +1601,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: -300, y: -270}
-  m_SizeDelta: {x: 500, y: 50}
+  m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &583795536
 MonoBehaviour:
@@ -3211,6 +3211,7 @@ GameObject:
   - component: {fileID: 1443176516}
   - component: {fileID: 1443176519}
   - component: {fileID: 1443176518}
+  - component: {fileID: 1443176517}
   m_Layer: 5
   m_Name: ConfirmationPopupPanel
   m_TagString: Untagged
@@ -3240,6 +3241,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 650, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1443176517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1443176515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1eeb5b3bd95d584da6bc9952392fb49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ConfirmationPopupManager
+  popupPanel: {fileID: 1443176515}
+  popupText: {fileID: 1419293643}
+  yesButton: {fileID: 1722064343}
+  noButton: {fileID: 2104491553}
 --- !u!114 &1443176518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3550,7 +3567,6 @@ GameObject:
   - component: {fileID: 1548563256}
   - component: {fileID: 1548563258}
   - component: {fileID: 1548563257}
-  - component: {fileID: 1548563259}
   m_Layer: 0
   m_Name: GameManagers
   m_TagString: Untagged
@@ -3619,22 +3635,6 @@ MonoBehaviour:
   goldText: {fileID: 583795536}
   startingGold: 0
   maxGold: 25
---- !u!114 &1548563259
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1548563255}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1eeb5b3bd95d584da6bc9952392fb49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ConfirmationPopupManager
-  popupPanel: {fileID: 1443176515}
-  popupText: {fileID: 1419293643}
-  yesButton: {fileID: 1722064343}
-  noButton: {fileID: 2104491553}
 --- !u!1 &1565131480
 GameObject:
   m_ObjectHideFlags: 0
@@ -4603,7 +4603,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1920, y: 1700}
+  m_SizeDelta: {x: 1920, y: 1562}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2047813337
 MonoBehaviour:
