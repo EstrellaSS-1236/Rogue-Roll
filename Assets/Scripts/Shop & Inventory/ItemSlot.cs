@@ -30,17 +30,15 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
 
     private void Awake()
     {
-        // Initialize quantity text
         if (quantityText != null)
         {
             quantityText.text = string.Empty;
             quantityText.enabled = false;
         }
-
-        // Ensure selection shader is hidden initially
-        if (selectedShader != null) selectedShader.SetActive(false);
+        selectedShader?.SetActive(false);
     }
 
+    // Add items to this slot
     public int AddItem(string itemName, int quantity, Sprite itemSprite, string itemDescription)
     {
         if (isFull) return quantity;
@@ -57,19 +55,20 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
             int extraItems = this.quantity - maxNumberOfItems;
             this.quantity = maxNumberOfItems;
             isFull = true;
-
-            UpdateUI();
+            RefreshUI();
             return extraItems;
         }
 
-        UpdateUI();
+        RefreshUI();
         return 0;
     }
 
-    private void UpdateUI()
+    // Refresh UI
+    public void RefreshUI()
     {
         if (quantityText != null)
         {
+            quantityText.ForceMeshUpdate();
             if (quantity > 0)
             {
                 quantityText.text = quantity.ToString();
@@ -83,15 +82,7 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    public void ForceUpdateUI()
-    {
-        if (quantityText != null)
-        {
-            quantityText.ForceMeshUpdate();
-            UpdateUI();
-        }
-    }
-
+    // Handle pointer clicks
     public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Left)
@@ -100,39 +91,46 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
             OnRightClick();
     }
 
+    // Handle left click
     private void OnLeftClick()
     {
+        if (InventoryManager.Instance != null && InventoryManager.Instance.IsWaitingForReplace())
+        {
+            InventoryManager.Instance.ReplaceInSlot(this);
+            return;
+        }
+
         if (thisItemSelected)
         {
             if (!string.IsNullOrEmpty(itemName))
             {
-                // Call UseItem, but don't decrement here
                 InventoryManager.Instance?.UseItem(itemName);
-
-                // UI will update after GoldManager consumes the item
-                UpdateUI();
-
-                if (quantity <= 0)
-                    ClearSlot();
+                RefreshUI();
+                if (quantity <= 0) ClearSlot();
             }
         }
         else
         {
-            InventoryManager.Instance?.DeselectAllSlots();
-            selectedShader?.SetActive(true);
-            thisItemSelected = true;
-
-            if (itemDescriptionNameText != null)
-                itemDescriptionNameText.text = itemName;
-
-            if (itemDescriptionText != null)
-                itemDescriptionText.text = itemDescription;
-
-            if (itemDescriptionImage != null)
-                itemDescriptionImage.sprite = itemSprite ?? emptySprite;
+            SelectSlot();
         }
     }
 
+    // Public helper to select this slot
+    public void SelectSlot()
+    {
+        InventoryManager.Instance?.DeselectAllSlots();
+        selectedShader?.SetActive(true);
+        thisItemSelected = true;
+
+        if (itemDescriptionNameText != null)
+            itemDescriptionNameText.text = itemName;
+        if (itemDescriptionText != null)
+            itemDescriptionText.text = itemDescription;
+        if (itemDescriptionImage != null)
+            itemDescriptionImage.sprite = itemSprite ?? emptySprite;
+    }
+
+    // Clear slot completely
     public void ClearSlot()
     {
         quantity = 0;
@@ -153,8 +151,15 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         if (selectedShader != null) selectedShader.SetActive(false);
     }
 
+    // Handle right click (show removal popup)
     private void OnRightClick()
     {
-        Debug.Log($"Right-clicked on {itemName}. Future: drop/split functionality.");
+        if (string.IsNullOrEmpty(itemName) || quantity <= 0)
+        {
+            Debug.Log("Right-clicked on empty slot. Nothing to delete.");
+            return;
+        }
+
+        OptionPopupManager.Instance.ShowRemoveItemPopup(itemName, InventoryManager.Instance.ItemSlots);
     }
 }
