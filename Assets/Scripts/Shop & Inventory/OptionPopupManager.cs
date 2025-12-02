@@ -9,6 +9,7 @@ using System.Collections.Generic;
  *   - Normal choice popups (text + buttons)
  *   - Number input popups (slider capped at max quantity)
  * Reuses the same PopupPanel prefab in your Canvas.
+ * Includes fallback logic if references are not set.
  */
 public class OptionPopupManager : MonoBehaviour
 {
@@ -41,11 +42,7 @@ public class OptionPopupManager : MonoBehaviour
 
     /*
      * Show a popup with message, options, and optional slider.
-     * message: text to display
-     * options: dictionary of button labels and actions
-     * useSlider: whether to show the slider
-     * sliderMax: maximum slider value
-     * onConfirmWithNumber: callback when Confirm is pressed with a number
+     * Falls back to direct execution if references are missing.
      */
     public void ShowPopup(
         string message,
@@ -54,12 +51,29 @@ public class OptionPopupManager : MonoBehaviour
         int sliderMax = 0,
         System.Action<int> onConfirmWithNumber = null)
     {
+        // Fallback if references are missing
         if (popupPanel == null || popupText == null || buttonPrefab == null)
         {
-            Debug.LogError("Popup references not set in Inspector");
+            Debug.LogWarning("Popup references not set. Falling back to direct execution.");
+
+            if (useSlider && onConfirmWithNumber != null)
+            {
+                // Default to 1 if slider not available
+                onConfirmWithNumber(1);
+            }
+            else
+            {
+                // Execute the first option by default
+                foreach (var kvp in options)
+                {
+                    kvp.Value?.Invoke();
+                    break;
+                }
+            }
             return;
         }
 
+        // Normal popup flow
         popupPanel.SetActive(true);
         popupText.text = message;
 
@@ -106,7 +120,6 @@ public class OptionPopupManager : MonoBehaviour
             {
                 popupPanel.SetActive(false);
 
-                // If using slider and Confirm button pressed
                 if (useSlider && onConfirmWithNumber != null && optionName.ToLower().Contains("confirm"))
                 {
                     int value = Mathf.RoundToInt(popupSlider.value);
@@ -164,7 +177,6 @@ public class OptionPopupManager : MonoBehaviour
                 InventoryManager.Instance.RemoveItem(itemName, total);
             }},
             { "Eliminar cantidad personalizada", () => {
-                // Stage 2: show slider popup
                 int total = 0;
                 foreach (var slot in itemSlots)
                     if (slot.itemName == itemName) total += slot.quantity;

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemSO
   itemName: d6
   icon: {fileID: 21300000, guid: e5fd13576b849fd4fa809ea7dad1ea2b, type: 3}
-  itemDescription: Adds 50 pesetas.
+  itemDescription: 
   prefab3D: {fileID: 1313086573113623095, guid: fd449e3f525a6974689044ed95919c54, type: 3}
   statToChange: 0
-  amountToChangeStat: 50
+  amountToChangeStat: 0
+  buyPrice: 8
+  sellPrice: 4
