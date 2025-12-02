@@ -4,36 +4,32 @@ using System.Collections.Generic;
 /*
  * ShopPedestalRandomizer
  * ----------------------
- * This script is attached to each shop pedestal prefab.
  * Responsibilities:
  *  - Randomly selects an ItemSO from a list of possible items
- *  - Spawns the item's 3D model at the DisplayPoint
- *  - Shows a popup when the player enters the pedestal trigger
- *  - Handles purchase logic: deduct gold, add item to inventory, remove model
+ *  - Spawns the item's 3D model as a child of displayPoint
+ *  - Positions it at the center of the pedestal's top face + vertical offset
+ *  - Strips physics components so the display model is static
+ *  - Allows scale and vertical offset adjustment via Inspector
+ *  - Handles purchase logic
  */
 public class ShopPedestalRandomizer : MonoBehaviour
 {
     [Header("Possible items for this pedestal")]
-    [SerializeField] private ItemSO[] possibleItems; // List of items that can appear on this pedestal
+    [SerializeField] private ItemSO[] possibleItems;
 
     [Header("Visuals")]
-    [SerializeField] private Transform displayPoint; // Empty child transform where the item model will spawn
+    [SerializeField] private Transform displayPoint; // parent for spawned item
+    [SerializeField] private float displayScale = 0.5f;
+    [SerializeField] private float displayYOffset = 0.1f;
 
-    private ItemSO chosenItem;       // The item currently displayed on this pedestal
-    private GameObject spawnedModel; // Reference to the spawned 3D model
+    private ItemSO chosenItem;
+    private GameObject spawnedModel;
 
     private void Start()
     {
-        // Spawn an item immediately when the scene loads
         RefreshItem();
     }
 
-    /*
-     * RefreshItem
-     * -----------
-     * Picks a random item from possibleItems and spawns its 3D model at the displayPoint.
-     * Called at Start() and can be called again if you want to re-roll items later.
-     */
     private void RefreshItem()
     {
         if (possibleItems == null || possibleItems.Length == 0)
@@ -42,35 +38,49 @@ public class ShopPedestalRandomizer : MonoBehaviour
             return;
         }
 
-        // Destroy old model if one exists
         if (spawnedModel != null) Destroy(spawnedModel);
 
-        // Pick a random item from the array
         int index = Random.Range(0, possibleItems.Length);
         chosenItem = possibleItems[index];
 
-        // Spawn its 3D model at the DisplayPoint
         if (chosenItem.prefab3D != null && displayPoint != null)
         {
+            // Calculate pedestal top center in world space
+            Collider pedestalCollider = GetComponent<Collider>();
+            Vector3 worldSpawnPos;
+
+            if (pedestalCollider != null)
+            {
+                Bounds bounds = pedestalCollider.bounds;
+                worldSpawnPos = new Vector3(bounds.center.x, bounds.max.y + displayYOffset, bounds.center.z);
+            }
+            else
+            {
+                worldSpawnPos = transform.position + Vector3.up * (1f + displayYOffset);
+            }
+
+            // Convert world position to local relative to displayPoint
+            Vector3 localSpawnPos = displayPoint.InverseTransformPoint(worldSpawnPos);
+
+            // Instantiate as child of displayPoint
             spawnedModel = Instantiate(chosenItem.prefab3D, displayPoint);
-            spawnedModel.transform.localPosition = Vector3.zero;
+            spawnedModel.transform.localPosition = localSpawnPos;
             spawnedModel.transform.localRotation = Quaternion.identity;
-            spawnedModel.transform.localScale = Vector3.one * 1.5f; // Scale up slightly for visibility
+            spawnedModel.transform.localScale = Vector3.one * displayScale;
+
+            // Strip physics
+            Rigidbody rb = spawnedModel.GetComponent<Rigidbody>();
+            if (rb != null) Destroy(rb);
+
+            Collider col = spawnedModel.GetComponent<Collider>();
+            if (col != null) Destroy(col);
         }
     }
 
-    /*
-     * OnTriggerEnter
-     * ---------------
-     * Called when the player enters the pedestal's trigger collider.
-     * Shows a popup asking if they want to buy the item.
-     */
     private void OnTriggerEnter(Collider other)
     {
-        // Only react to the player
         if (!other.CompareTag("Player")) return;
 
-        // Show popup if OptionPopupManager exists and we have a chosen item
         if (OptionPopupManager.Instance != null && chosenItem != null)
         {
             OptionPopupManager.Instance.ShowPopup(
@@ -79,18 +89,13 @@ public class ShopPedestalRandomizer : MonoBehaviour
                     { "Sí", () => {
                         int currentGold = StatManager.Instance.GetCurrentValue(ItemSO.StatType.gold);
 
-                        // Check if player has enough gold
                         if (currentGold >= chosenItem.buyPrice)
                         {
-                            // Deduct gold
                             StatManager.Instance.ChangeStat(ItemSO.StatType.gold, -chosenItem.buyPrice);
-
-                            // Add item to inventory using the overload that accepts ItemSO
                             InventoryManager.Instance.AddItem(chosenItem, 1);
 
                             Debug.Log("Player bought " + chosenItem.itemName + " for " + chosenItem.buyPrice + " Pesetas.");
 
-                            // Remove the model from the pedestal
                             if (spawnedModel != null) Destroy(spawnedModel);
                         }
                         else
@@ -99,7 +104,6 @@ public class ShopPedestalRandomizer : MonoBehaviour
                         }
                     }},
                     { "No", () => {
-                        // Do nothing except log
                         Debug.Log("Purchase cancelled.");
                     }}
                 }
