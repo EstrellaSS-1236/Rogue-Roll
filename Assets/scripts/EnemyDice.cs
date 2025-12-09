@@ -2,15 +2,10 @@ using UnityEngine;
 
 public class EnemyDice : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public static int ThrowDice()
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        int rndnumber = Random.Range(1, 7);
+        Debug.Log("el numero es: " + rndnumber);
+        return rndnumber;
     }
 }

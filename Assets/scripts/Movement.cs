@@ -5,17 +5,29 @@ public class Movement : MonoBehaviour
 {
     [SerializeField] Transform[] positions;
     [SerializeField] float speed;
-    private int actualPos=0;
-    public void ThrowDice()
+    [SerializeField] int actualPos;
+    [SerializeField] bool isPlayer;
+    
+    public void StartMoving()
     {
+        if (isPlayer)
+        {
+            StartCoroutine(Move(PlayerDice.ThrowDice()));
+        }
+        else
+        {
+            StartCoroutine(Move(EnemyDice.ThrowDice()));
+        }
 
-        int rndnumber = Random.Range(1, 7);
-        Debug.Log("el numero es: "+ rndnumber);
-        StartCoroutine(Move(rndnumber));
+            
+
     }
 
     IEnumerator Move(int steps)
     {
+        if(!isPlayer){
+            yield return new WaitForSeconds(1f);
+        }
         for (int i = 0; i < steps; i++)
         {
             if (actualPos + 1 >= positions.Length)
