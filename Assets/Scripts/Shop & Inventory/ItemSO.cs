@@ -4,75 +4,109 @@ using UnityEngine;
  * ItemSO
  * ------
  * ScriptableObject representing an item definition.
- * Holds metadata (name, description, icon, prefab, buy/sell prices, and stat effects).
+ * Supports:
+ * - Consumable
+ * - Permanent
+ * - Dice
  */
 [CreateAssetMenu(fileName = "NewItem", menuName = "Inventory/Item")]
 public class ItemSO : ScriptableObject
 {
+    public enum ItemType
+    {
+        Consumable,
+        Permanent,
+        Dice
+    }
+
     public enum StatType
     {
-        None,   // Special marker: this item does not change stats
-        gold    // Example stat: Pesetas
-        // Add more stats here in the future
+        None,
+        gold,
+        rolls
     }
 
     [Header("Basic Info")]
-    public string itemName;                   // Name of the item
-    public Sprite icon;                       // Icon for UI
-    [TextArea] public string itemDescription; // Description text
-    public GameObject prefab3D;               // Associated 3D prefab in world
+    public string itemName;
+    public Sprite icon;
+    [TextArea] public string itemDescription;
+    public GameObject prefab3D;
 
-    [Header("Stat Effect")]
-    public StatType statToChange;             // Which stat this item affects
-    public int amountToChangeStat;            // How much to change the stat
+    [Header("Item Type")]
+    public ItemType itemType;
+
+    [Header("Stat Effect (Consumables only)")]
+    public StatType statToChange;
+    public int amountToChangeStat;
+
+    [Header("Dice Settings (Dice only)")]
+    public int diceFaces = 6;
 
     [Header("Shop Settings")]
-    public int buyPrice;                      // Cost to buy in Pesetas
-    public int sellPrice;                     // Value when selling in Pesetas
+    public int buyPrice;
+    public int sellPrice;
 
-    // Display name for stat
     public string GetStatDisplayName()
     {
         switch (statToChange)
         {
             case StatType.gold: return "Pesetas";
-            case StatType.None: return "None";
-            default: return statToChange.ToString();
+            case StatType.rolls: return "Tiradas";
+            default: return "None";
         }
     }
 
-    // Current stat value
     public int GetCurrentStatValue()
     {
         if (statToChange == StatType.None) return 0;
         return StatManager.Instance != null ? StatManager.Instance.GetCurrentValue(statToChange) : 0;
     }
 
-    // New stat value after applying item
     public int GetNewStatValue()
     {
         if (statToChange == StatType.None) return 0;
         return GetCurrentStatValue() + amountToChangeStat;
     }
 
-    // Use the item (only if statToChange is not None)
     public void UseItem()
     {
         Debug.Log("[ItemSO] Using " + itemName);
 
+        switch (itemType)
+        {
+            case ItemType.Consumable:
+                HandleConsumable();
+                break;
+
+            case ItemType.Permanent:
+                HandlePermanent();
+                break;
+
+            case ItemType.Dice:
+                HandleDice();
+                break;
+        }
+    }
+
+    private void HandleConsumable()
+    {
         if (statToChange == StatType.None)
         {
-            Debug.Log("[ItemSO] " + itemName + " does not affect stats.");
+            Debug.Log(itemName + " does not affect stats.");
             return;
         }
 
-        if (StatManager.Instance != null)
-        {
-            StatManager.Instance.TryUseItem(this);
-        }
-        else
-        {
-            Debug.LogWarning("[ItemSO] No StatManager found for " + statToChange);
-        }
+        StatManager.Instance?.TryUseItem(this);
+    }
+
+    private void HandlePermanent()
+    {
+        Debug.Log(itemName + " is a permanent item. It is not consumed.");
+    }
+
+    private void HandleDice()
+    {
+        int result = Random.Range(1, diceFaces + 1);
+        Debug.Log("Dice " + itemName + " rolled: " + result);
     }
 }

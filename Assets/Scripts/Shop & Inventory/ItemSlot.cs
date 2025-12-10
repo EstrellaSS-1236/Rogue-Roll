@@ -3,6 +3,16 @@ using TMPro;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+/*
+ * ItemSlot
+ * --------
+ * Represents a single inventory slot.
+ * It stores item data and updates its UI.
+ * IMPORTANT:
+ * - This class does NOT decide whether to use, sell, or replace items.
+ * - All click logic is forwarded to InventoryManager.
+ * - InventoryManager decides what to do depending on the current mode.
+ */
 public class ItemSlot : MonoBehaviour, IPointerClickHandler
 {
     //====== ITEM DATA ======//
@@ -35,6 +45,7 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
             quantityText.text = string.Empty;
             quantityText.enabled = false;
         }
+
         selectedShader?.SetActive(false);
     }
 
@@ -69,6 +80,7 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         if (quantityText != null)
         {
             quantityText.ForceMeshUpdate();
+
             if (quantity > 0)
             {
                 quantityText.text = quantity.ToString();
@@ -82,50 +94,43 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    // Handle pointer clicks
+    /*
+     * OnPointerClick
+     * --------------
+     * Forwards all clicks to InventoryManager.
+     * InventoryManager decides:
+     * - Use item (normal mode)
+     * - Replace item (inventory full mode)
+     * - Sell item (sell pedestal mode)
+     */
     public void OnPointerClick(PointerEventData eventData)
     {
+        // Left click -> forward to InventoryManager
         if (eventData.button == PointerEventData.InputButton.Left)
-            OnLeftClick();
+        {
+            InventoryManager.Instance.OnSlotClicked(this);
+        }
+        // Right click -> delete popup (SPANISH)
         else if (eventData.button == PointerEventData.InputButton.Right)
+        {
             OnRightClick();
-    }
-
-    // Handle left click
-    private void OnLeftClick()
-    {
-        if (InventoryManager.Instance != null && InventoryManager.Instance.IsWaitingForReplace())
-        {
-            InventoryManager.Instance.ReplaceInSlot(this);
-            return;
-        }
-
-        if (thisItemSelected)
-        {
-            if (!string.IsNullOrEmpty(itemName))
-            {
-                InventoryManager.Instance?.UseItem(itemName);
-                RefreshUI();
-                if (quantity <= 0) ClearSlot();
-            }
-        }
-        else
-        {
-            SelectSlot();
         }
     }
 
-    // Public helper to select this slot
+    // Select this slot visually
     public void SelectSlot()
     {
         InventoryManager.Instance?.DeselectAllSlots();
+
         selectedShader?.SetActive(true);
         thisItemSelected = true;
 
         if (itemDescriptionNameText != null)
             itemDescriptionNameText.text = itemName;
+
         if (itemDescriptionText != null)
             itemDescriptionText.text = itemDescription;
+
         if (itemDescriptionImage != null)
             itemDescriptionImage.sprite = itemSprite ?? emptySprite;
     }
@@ -151,12 +156,12 @@ public class ItemSlot : MonoBehaviour, IPointerClickHandler
         if (selectedShader != null) selectedShader.SetActive(false);
     }
 
-    // Handle right click (show removal popup)
+    // Right click -> delete popup (SPANISH)
     private void OnRightClick()
     {
         if (string.IsNullOrEmpty(itemName) || quantity <= 0)
         {
-            Debug.Log("Right-clicked on empty slot. Nothing to delete.");
+            Debug.Log("Has hecho clic derecho en un hueco vacio.");
             return;
         }
 

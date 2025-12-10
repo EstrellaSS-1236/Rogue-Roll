@@ -16,7 +16,9 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: e5fd13576b849fd4fa809ea7dad1ea2b, type: 3}
   itemDescription: 
   prefab3D: {fileID: 919132149155446097, guid: 5865bb7bea7c8e64386c3b51d64dcf95, type: 3}
-  statToChange: 0
-  amountToChangeStat: 0
+  itemType: 0
+  statToChange: 1
+  amountToChangeStat: 3
+  diceFaces: 6
   buyPrice: 5
   sellPrice: 3

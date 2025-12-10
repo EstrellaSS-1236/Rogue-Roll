@@ -18,25 +18,23 @@ public class StatManager : MonoBehaviour
     public static StatManager Instance { get; private set; }
 
     [Header("UI Bindings")]
-    [SerializeField] private List<StatUIBinding> statBindings; // List of stat-to-UI mappings
+    [SerializeField] private List<StatUIBinding> statBindings;
 
     [Header("Starting Values")]
-    [SerializeField] private int startingGold = 0;   // Initial gold value
-    [SerializeField] private int maxGold = 1000;     // Maximum gold allowed
+    [SerializeField] private int startingGold = 0;
+    [SerializeField] private int maxGold = 1000;
 
-    // Dictionaries to track current and max values for each stat
+    [SerializeField] private int startingRolls = 1; // Rolls always start at minimum 1
+
     private Dictionary<ItemSO.StatType, int> currentValues = new Dictionary<ItemSO.StatType, int>();
     private Dictionary<ItemSO.StatType, int> maxValues = new Dictionary<ItemSO.StatType, int>();
 
-    // Lookup for UI text elements
     private Dictionary<ItemSO.StatType, TextMeshProUGUI> statTextLookup = new Dictionary<ItemSO.StatType, TextMeshProUGUI>();
 
-    // Item currently being processed (used for confirmation popups)
     private ItemSO pendingItem;
 
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -44,37 +42,38 @@ public class StatManager : MonoBehaviour
         }
         Instance = this;
 
-        // Build lookup for UI texts
         foreach (var binding in statBindings)
         {
             if (!statTextLookup.ContainsKey(binding.statType))
                 statTextLookup[binding.statType] = binding.statText;
         }
 
-        // Initialize gold stat
         currentValues[ItemSO.StatType.gold] = startingGold;
         maxValues[ItemSO.StatType.gold] = maxGold;
 
-        // Update UI at start
-        UpdateUI(ItemSO.StatType.gold);
+        currentValues[ItemSO.StatType.rolls] = Mathf.Max(1, startingRolls);
+        maxValues[ItemSO.StatType.rolls] = int.MaxValue;
+
+        UpdateAllUI();
     }
 
-    /* Called by ItemSO.UseItem() when player tries to use an item */
     public void TryUseItem(ItemSO item)
     {
         pendingItem = item;
         var stat = item.statToChange;
 
+        if (stat == ItemSO.StatType.rolls)
+        {
+            ApplyChange(stat, item.amountToChangeStat);
+            ConsumePendingItem();
+            return;
+        }
+
         int current = GetCurrentValue(stat);
         int max = GetMaxValue(stat);
 
-        Debug.Log($"[StatManager] Trying to use {item.itemName} | stat={stat} | current={current} | amount={item.amountToChangeStat} | max={max}");
-
-        // If using the item would exceed the max, show a confirmation popup
         if (current + item.amountToChangeStat > max)
         {
-            Debug.Log("[StatManager] Overflow detected, showing popup");
-
             if (OptionPopupManager.Instance != null)
             {
                 OptionPopupManager.Instance.ShowPopup(
@@ -84,10 +83,7 @@ public class StatManager : MonoBehaviour
                             ApplyChange(stat, item.amountToChangeStat);
                             ConsumePendingItem();
                         }},
-                        { "No", () => {
-                            Debug.Log("[StatManager] Player cancelled using the item.");
-                            pendingItem = null;
-                        }}
+                        { "No", () => { pendingItem = null; }}
                     }
                 );
             }
@@ -99,62 +95,77 @@ public class StatManager : MonoBehaviour
         }
         else
         {
-            // Safe to apply directly
             ApplyChange(stat, item.amountToChangeStat);
             ConsumePendingItem();
         }
     }
 
-    /* Direct stat change without item */
     public void ChangeStat(ItemSO.StatType stat, int amount)
     {
         ApplyChange(stat, amount);
     }
 
-    /* Apply change and clamp between 0 and max */
     private void ApplyChange(ItemSO.StatType stat, int amount)
     {
         if (!currentValues.ContainsKey(stat)) currentValues[stat] = 0;
-        if (!maxValues.ContainsKey(stat)) maxValues[stat] = int.MaxValue;
 
         currentValues[stat] += amount;
+
+        if (stat == ItemSO.StatType.rolls)
+        {
+            if (currentValues[stat] < 1)
+                currentValues[stat] = 1;
+
+            UpdateAllUI();
+            return;
+        }
+
+        if (!maxValues.ContainsKey(stat)) maxValues[stat] = int.MaxValue;
+
         if (currentValues[stat] > maxValues[stat]) currentValues[stat] = maxValues[stat];
         if (currentValues[stat] < 0) currentValues[stat] = 0;
 
-        Debug.Log($"[StatManager] {stat} updated: {currentValues[stat]}/{maxValues[stat]}");
-        UpdateUI(stat);
+        UpdateAllUI();
     }
 
-    /* Remove one unit of the pending item from inventory */
     private void ConsumePendingItem()
     {
         if (pendingItem != null)
         {
-            Debug.Log("[StatManager] Consumed item: " + pendingItem.itemName);
             InventoryManager.Instance.RemoveItem(pendingItem.itemName, 1);
             pendingItem = null;
         }
     }
 
-    /* Update UI text for a given stat */
-    private void UpdateUI(ItemSO.StatType stat)
+    private void UpdateAllUI()
     {
-        if (statTextLookup.TryGetValue(stat, out var text))
+        foreach (var kvp in statTextLookup)
         {
-            int current = GetCurrentValue(stat);
-            int max = GetMaxValue(stat);
-            string displayName = GetDisplayName(stat);
+            ItemSO.StatType stat = kvp.Key;
+            TextMeshProUGUI text = kvp.Value;
 
-            text.text = $"{displayName}: {current}/{max}";
+            int current = GetCurrentValue(stat);
+
+            if (stat == ItemSO.StatType.rolls)
+            {
+                text.text = $"Tiradas: {current}";
+            }
+            else
+            {
+                int max = GetMaxValue(stat);
+                string displayName = GetDisplayName(stat);
+                text.text = $"{displayName}: {current}/{max}";
+            }
         }
     }
 
-    /* Cleaner approach: static display names */
     private string GetDisplayName(ItemSO.StatType stat)
     {
         switch (stat)
         {
             case ItemSO.StatType.gold: return "Pesetas";
+            case ItemSO.StatType.rolls: return "Tiradas";
+            case ItemSO.StatType.None: return "None";
             default: return stat.ToString();
         }
     }
