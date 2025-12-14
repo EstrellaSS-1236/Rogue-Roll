@@ -8,11 +8,6 @@ using System.Collections.Generic;
  * Central system for managing the player's inventory.
  * Handles adding/removing items, opening/closing the inventory UI,
  * slot replacement when full, item usage, and selling callbacks.
- *
- * IMPORTANT:
- * - This class does NOT sell items.
- * - SellPedestal handles the selling process.
- * - InventoryManager only notifies SellPedestal when a slot is clicked.
  */
 public class InventoryManager : MonoBehaviour
 {
@@ -81,6 +76,10 @@ public class InventoryManager : MonoBehaviour
 
     /*
      * Inventory open/close
+     * --------------------
+     * Now supports a parameter pauseGame:
+     * - pauseGame = true -> freezes gameplay (default).
+     * - pauseGame = false -> keeps gameplay running (used for selling).
      */
     public void ToggleInventory()
     {
@@ -90,19 +89,23 @@ public class InventoryManager : MonoBehaviour
             OpenInventory();
     }
 
-    public void OpenInventory()
+    public void OpenInventory(bool pauseGame = true)
     {
         menuActivated = true;
         inventoryMenu?.SetActive(true);
         StartCoroutine(RefreshSlotsNextFrame());
-        Time.timeScale = 0f; // Pause game
+
+        if (pauseGame)
+            Time.timeScale = 0f; // Pause game
+        else
+            Time.timeScale = 1f; // Keep game running
     }
 
     public void CloseInventory()
     {
         menuActivated = false;
         inventoryMenu?.SetActive(false);
-        Time.timeScale = 1f; // Resume game
+        Time.timeScale = 1f; // Always resume game
 
         // Cancel replacement mode if active
         if (waitingForReplace)
@@ -117,6 +120,8 @@ public class InventoryManager : MonoBehaviour
 
     /*
      * Selling mode control
+     * --------------------
+     * SellPedestal registers itself here so that slot clicks are routed to it.
      */
     public void SetActiveSellPedestal(SellPedestal pedestal)
     {
@@ -178,7 +183,9 @@ public class InventoryManager : MonoBehaviour
 
     /*
      * Slot click handler
+     * ------------------
      * This is the MOST IMPORTANT part for selling.
+     * If selling mode is active, notify SellPedestal.
      */
     public void OnSlotClicked(ItemSlot slot)
     {
